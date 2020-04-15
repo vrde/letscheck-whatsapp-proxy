@@ -29,7 +29,7 @@ async function onAdminMessage(client, message) {
 }
 
 async function onMessage(client, message) {
-  if (!onAdminMessage(client, message)) {
+  if (!(await onAdminMessage(client, message))) {
     return;
   }
   const form = new FormData();
