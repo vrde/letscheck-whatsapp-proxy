@@ -13,11 +13,25 @@ const bodyParser = require("body-parser");
 
 const FormData = require("form-data");
 const fetch = require("node-fetch");
+const ADMIN_SENDER = process.env.SULLA_ADMIN_SENDER.replace("+", "") + "@c.us";
 
 // Create media dir
 fs.mkdirSync(process.env.SULLA_MEDIA_DIR, { recursive: true });
 
+async function onAdminMessage(client, message) {
+  if (message["from"] === ADMIN_SENDER) {
+    if (message.body === "👋") {
+      await client.sendText(message.from, "👋");
+      return false;
+    }
+  }
+  return true;
+}
+
 async function onMessage(client, message) {
+  if (!onAdminMessage(client, message)) {
+    return;
+  }
   const form = new FormData();
   const body = message.isMedia ? message.caption : message.body;
   // Seems to be exactly 32 char :sweat_smile:
@@ -85,11 +99,11 @@ function startAPI(client) {
   app.use("/media", express.static("media"));
 
   app.post("/messages/create", async (req, res) => {
+    console.log("Send message to", req.body.recipient);
+    const recipient = req.body.recipient.replace("+", "") + "@c.us";
+    const body = req.body.body;
     try {
-      const msg = await client.sendText(
-        req.body.recipient + "@c.us",
-        req.body.body
-      );
+      const msg = await client.sendText(recipient, body);
       if (msg === false) {
         throw new Error("Wrong message format");
       }
